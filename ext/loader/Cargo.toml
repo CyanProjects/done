@@ -1,0 +1,26 @@
+# Copyright 2018-2025 the Deno authors. MIT license.
+
+[package]
+name = "done_loader"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+readme = "README.md"
+repository.workspace = true
+description = "Done of Done, Module Loader"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+base64.workspace = true
+boxed_error.workspace = true
+bytes.workspace = true
+deno_core.workspace = true
+deno_error.workspace = true
+deno_features.workspace = true
+thiserror.workspace = true
+url.workspace = true

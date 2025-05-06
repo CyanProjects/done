@@ -20,6 +20,7 @@ members = [
   "ext/http",
   "ext/io",
   "ext/kv",
+  "ext/loader",
   "ext/napi",
   "ext/napi/sym",
   "ext/net",
@@ -54,7 +55,7 @@ repository = "https://github.com/denoland/deno"
 
 [workspace.dependencies]
 deno_ast = { version = "=0.46.6", features = ["transpiling"] }
-deno_core = { version = "0.346.0" }
+deno_core = { version = "0.346.0", git = "https://github.com/CyanProjects/done_core" }
 
 deno_cache_dir = "=0.20.0"
 deno_config = { version = "=0.54.2", features = ["workspace"] }
@@ -92,6 +93,7 @@ deno_fs = { version = "0.114.0", path = "./ext/fs" }
 deno_http = { version = "0.202.0", path = "./ext/http" }
 deno_io = { version = "0.114.0", path = "./ext/io" }
 deno_kv = { version = "0.112.0", path = "./ext/kv" }
+done_loader = { version = "0.1.0", path = "./ext/loader" }
 deno_napi = { version = "0.135.0", path = "./ext/napi" }
 deno_net = { version = "0.196.0", path = "./ext/net" }
 deno_node = { version = "0.142.0", path = "./ext/node" }

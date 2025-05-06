@@ -28,6 +28,7 @@ import * as process from "ext:deno_process/40_process.js";
 import * as signals from "ext:deno_os/40_signals.js";
 import * as tty from "ext:runtime/40_tty.js";
 import * as kv from "ext:deno_kv/01_db.ts";
+import * as loader from "ext:done_loader/01_loader.ts";
 import * as cron from "ext:deno_cron/01_cron.ts";
 import * as webgpuSurface from "ext:deno_webgpu/02_surface.js";
 import * as telemetry from "ext:deno_telemetry/telemetry.ts";
@@ -214,6 +215,10 @@ ObjectDefineProperties(denoNsUnstableById[unstableIds.webgpu], {
 
 denoNsUnstableById[unstableIds.otel] = {
   telemetry: telemetry.telemetry,
+};
+
+denoNsUnstableById[unstableIds.loaderApi] = {
+  loader: loader.DoneLoader,
 };
 
 export { denoNs, denoNsUnstableById, unstableIds };

@@ -396,6 +396,7 @@ core.registerErrorBuilder(
 
 function runtimeStart(
   denoVersion,
+  doneCode,
   v8Version,
   tsVersion,
   target,
@@ -405,6 +406,7 @@ function runtimeStart(
   op_set_format_exception_callback(formatException);
   version.setVersions(
     denoVersion,
+    doneCode,
     v8Version,
     tsVersion,
   );
@@ -795,19 +797,20 @@ function bootstrapMainRuntime(runtimeOptions, warmup = false) {
 
     const {
       0: denoVersion,
-      1: location_,
-      2: unstableFeatures,
-      3: inspectFlag,
-      5: hasNodeModulesDir,
-      6: argv0,
-      7: nodeDebug,
-      8: mode,
-      9: servePort,
-      10: serveHost,
-      11: serveIsMain,
-      12: serveWorkerCount,
-      13: otelConfig,
-      15: standalone,
+      1: doneCode,
+      2: location_,
+      3: unstableFeatures,
+      4: inspectFlag,
+      6: hasNodeModulesDir,
+      7: argv0,
+      8: nodeDebug,
+      9: mode,
+      10: servePort,
+      11: serveHost,
+      12: serveIsMain,
+      13: serveWorkerCount,
+      14: otelConfig,
+      16: standalone,
     } = runtimeOptions;
 
     denoNs.build.standalone = standalone;
@@ -923,6 +926,7 @@ function bootstrapMainRuntime(runtimeOptions, warmup = false) {
 
     runtimeStart(
       denoVersion,
+      doneCode,
       v8Version,
       tsVersion,
       target,

@@ -299,6 +299,7 @@ pub fn get_extensions_in_snapshot() -> Vec<Extension> {
       deno_kv::sqlite::SqliteDbHandler::<Permissions>::new(None, None),
       deno_kv::KvConfig::builder().build(),
     ),
+    done_loader::done_loader::init(),
     deno_cron::deno_cron::init(deno_cron::local::LocalCronHandler::new()),
     deno_napi::deno_napi::init::<Permissions>(None),
     deno_http::deno_http::init(deno_http::Options::default()),

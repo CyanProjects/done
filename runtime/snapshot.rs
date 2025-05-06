@@ -45,6 +45,7 @@ pub fn create_runtime_snapshot(
     deno_tls::deno_tls::lazy_init(),
     deno_kv::deno_kv::lazy_init::<deno_kv::sqlite::SqliteDbHandler<Permissions>>(
     ),
+    done_loader::done_loader::lazy_init(),
     deno_cron::deno_cron::init(deno_cron::local::LocalCronHandler::new()),
     deno_napi::deno_napi::lazy_init::<Permissions>(),
     deno_http::deno_http::lazy_init(),

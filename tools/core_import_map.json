@@ -21,6 +21,7 @@
     "ext:deno_http/01_http.js": "../ext/http/01_http.js",
     "ext:deno_io/12_io.js": "../ext/io/12_io.js",
     "ext:deno_kv/01_db.ts": "../ext/kv/01_db.ts",
+    "ext:done_loader/01_loader.ts": "../ext/loader/01_loader.ts",
     "ext:deno_net/01_net.js": "../ext/net/01_net.js",
     "ext:deno_net/02_tls.js": "../ext/net/02_tls.js",
     "ext:deno_node/_events.d.ts": "../ext/node/polyfills/_events.d.ts",

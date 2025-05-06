@@ -94,6 +94,7 @@ impl From<log::Level> for WorkerLogLevel {
 #[derive(Clone)]
 pub struct BootstrapOptions {
   pub deno_version: String,
+  pub done_code: String,
   /// Sets `Deno.args` in JS runtime.
   pub args: Vec<String>,
   pub cpu_count: usize,
@@ -135,6 +136,7 @@ impl Default for BootstrapOptions {
 
     Self {
       deno_version: runtime_version.to_string(),
+      done_code: "Pinch-Out/0".to_string(),
       user_agent,
       cpu_count,
       color_level: colors::get_color_level(),
@@ -173,6 +175,8 @@ impl Default for BootstrapOptions {
 #[derive(Serialize)]
 struct BootstrapV8<'a>(
   // deno version
+  &'a str,
+  // done code
   &'a str,
   // location
   Option<&'a str>,
@@ -218,6 +222,7 @@ impl BootstrapOptions {
     let (serve_is_main, serve_worker_count) = self.mode.serve_info();
     let bootstrap = BootstrapV8(
       &self.deno_version,
+      &self.done_code,
       self.location.as_ref().map(|l| l.as_str()),
       self.unstable_features.as_ref(),
       self.inspect,

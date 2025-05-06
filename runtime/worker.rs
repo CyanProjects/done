@@ -530,6 +530,7 @@ impl MainWorker {
           ),
           deno_kv::KvConfig::builder().build(),
         ),
+        done_loader::done_loader::args(),
         deno_napi::deno_napi::args::<PermissionsContainer>(
           services.deno_rt_native_addon_loader.clone(),
         ),
@@ -964,6 +965,7 @@ fn common_extensions<
     deno_net::deno_net::lazy_init::<PermissionsContainer>(),
     deno_tls::deno_tls::init(),
     deno_kv::deno_kv::lazy_init::<MultiBackendDbHandler>(),
+    done_loader::done_loader::lazy_init(),
     deno_cron::deno_cron::init(LocalCronHandler::new()),
     deno_napi::deno_napi::lazy_init::<PermissionsContainer>(),
     deno_http::deno_http::lazy_init(),

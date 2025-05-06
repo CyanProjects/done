@@ -703,7 +703,8 @@
           "temporal",
           "unsafe-proto",
           "webgpu",
-          "worker-options"
+          "worker-options",
+          "loader-api"
         ]
       }
     },

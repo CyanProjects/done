@@ -304,6 +304,7 @@ impl<TSys: DenoLibSys> LibWorkerFactorySharedState<TSys> {
         worker_id: args.worker_id,
         bootstrap: BootstrapOptions {
           deno_version: crate::version::DENO_VERSION_INFO.deno.to_string(),
+          done_code: crate::version::DENO_VERSION_INFO.done.to_string(),
           args: shared.options.argv.clone(),
           cpu_count: std::thread::available_parallelism()
             .map(|p| p.get())
@@ -481,6 +482,7 @@ impl<TSys: DenoLibSys> LibMainWorkerFactory<TSys> {
     let options = WorkerOptions {
       bootstrap: BootstrapOptions {
         deno_version: crate::version::DENO_VERSION_INFO.deno.to_string(),
+        done_code: crate::version::DENO_VERSION_INFO.done.to_string(),
         args: shared.options.argv.clone(),
         cpu_count: std::thread::available_parallelism()
           .map(|p| p.get())

@@ -45,6 +45,8 @@ pub static DENO_VERSION_INFO: std::sync::LazyLock<DenoVersionInfo> =
         env!("DENO_VERSION")
       },
 
+      done: "0/Pinch-Out",
+
       release_channel,
 
       git_hash: GIT_COMMIT_HASH,
@@ -71,6 +73,8 @@ pub struct DenoVersionInfo {
   /// For stable release, a semver, eg. `v1.46.2`.
   /// For canary release, a semver + 7-char git hash, eg. `v1.46.3+asdfqwq`.
   pub deno: &'static str,
+
+  pub done: &'static str,
 
   pub release_channel: ReleaseChannel,
 

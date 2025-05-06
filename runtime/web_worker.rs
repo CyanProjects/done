@@ -539,6 +539,7 @@ impl WebWorker {
         ),
         deno_kv::KvConfig::builder().build(),
       ),
+      done_loader::done_loader::init(),
       deno_cron::deno_cron::init(LocalCronHandler::new()),
       deno_napi::deno_napi::init::<PermissionsContainer>(
         services.deno_rt_native_addon_loader.clone(),
