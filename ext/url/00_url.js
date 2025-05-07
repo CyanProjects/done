@@ -861,6 +861,8 @@ class URL {
   }
 }
 
+const _ = new URL(skipInit);
+
 webidl.configureInterface(URL);
 const URLPrototype = URL.prototype;
 

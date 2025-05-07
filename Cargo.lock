@@ -1764,7 +1764,7 @@ dependencies = [
 [[package]]
 name = "deno_core"
 version = "0.346.0"
-source = "git+https://github.com/CyanProjects/done_core#919220e549360dd8742eb325767e445f3ba7bce1"
+source = "git+https://github.com/CyanProjects/done_core#2ccf63b899b2d2255cbfcb3a9b1d72b5291effc6"
 dependencies = [
  "anyhow",
  "az",
@@ -2406,7 +2406,7 @@ dependencies = [
 [[package]]
 name = "deno_ops"
 version = "0.222.0"
-source = "git+https://github.com/CyanProjects/done_core#919220e549360dd8742eb325767e445f3ba7bce1"
+source = "git+https://github.com/CyanProjects/done_core#2ccf63b899b2d2255cbfcb3a9b1d72b5291effc6"
 dependencies = [
  "indexmap 2.8.0",
  "proc-macro-rules",
@@ -7458,7 +7458,7 @@ dependencies = [
 [[package]]
 name = "serde_v8"
 version = "0.255.0"
-source = "git+https://github.com/CyanProjects/done_core#919220e549360dd8742eb325767e445f3ba7bce1"
+source = "git+https://github.com/CyanProjects/done_core#2ccf63b899b2d2255cbfcb3a9b1d72b5291effc6"
 dependencies = [
  "deno_error",
  "num-bigint",
