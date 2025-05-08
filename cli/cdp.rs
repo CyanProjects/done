@@ -1,5 +1,7 @@
 // Copyright 2018-2025 the Deno authors. MIT license.
 
+use std::sync::Arc;
+
 /// <https://chromedevtools.github.io/devtools-protocol/tot/>
 use deno_core::serde_json::Value;
 use serde::Deserialize;
@@ -10,7 +12,7 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AwaitPromiseArgs {
-  pub promise_object_id: RemoteObjectId,
+  pub promise_object_id: Arc<RemoteObjectId>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub return_by_value: Option<bool>,
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -20,12 +22,12 @@ pub struct AwaitPromiseArgs {
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#method-callFunctionOn>
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CallFunctionOnArgs {
-  pub function_declaration: String,
+pub struct CallFunctionOnArgs<'a> {
+  pub function_declaration: &'a str,
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub object_id: Option<RemoteObjectId>,
+  pub object_id: Option<&'a RemoteObjectId>,
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub arguments: Option<Vec<CallArgument>>,
+  pub arguments: Option<&'a [CallArgumentRef<'a>]>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub silent: Option<bool>,
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -39,7 +41,7 @@ pub struct CallFunctionOnArgs {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub execution_context_id: Option<ExecutionContextId>,
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub object_group: Option<String>,
+  pub object_group: Option<&'a str>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub throw_on_side_effect: Option<bool>,
 }
@@ -66,10 +68,10 @@ pub struct CompileScriptArgs {
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#method-evaluate>
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct EvaluateArgs {
-  pub expression: String,
+pub struct EvaluateArgs<'a> {
+  pub expression: &'a str,
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub object_group: Option<String>,
+  pub object_group: Option<&'a str>,
   #[serde(
     rename = "includeCommandLineAPI",
     skip_serializing_if = "Option::is_none"
@@ -99,7 +101,7 @@ pub struct EvaluateArgs {
   #[serde(rename = "allowUnsafeEvalBlockedByCSP")]
   pub allow_unsafe_eval_blocked_by_csp: Option<bool>,
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub unique_context_id: Option<String>,
+  pub unique_context_id: Option<&'a str>,
 }
 
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#method-evaluate>
@@ -113,8 +115,8 @@ pub struct EvaluateResponse {
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#method-getProperties>
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GetPropertiesArgs {
-  pub object_id: RemoteObjectId,
+pub struct GetPropertiesArgs<'a> {
+  pub object_id: &'a RemoteObjectId,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub own_properties: Option<bool>,
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -150,8 +152,8 @@ pub struct GlobalLexicalScopeNamesResponse {
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#method-queryObjects>
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct QueryObjectsArgs {
-  pub prototype_object_id: RemoteObjectId,
+pub struct QueryObjectsArgs<'a> {
+  pub prototype_object_id: &'a RemoteObjectId,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub object_group: Option<String>,
 }
@@ -159,8 +161,8 @@ pub struct QueryObjectsArgs {
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#method-releaseObject>
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ReleaseObjectArgs {
-  pub object_id: RemoteObjectId,
+pub struct ReleaseObjectArgs<'a> {
+  pub object_id: &'a RemoteObjectId,
 }
 
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#method-releaseObjectGroup>
@@ -174,7 +176,7 @@ pub struct ReleaseObjectGroupArgs {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunScriptArgs {
-  pub script_id: ScriptId,
+  pub script_id: Arc<ScriptId>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub execution_context_id: Option<ExecutionContextId>,
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -213,7 +215,7 @@ pub struct RemoteObject {
   pub value: Option<Value>,
   pub unserializable_value: Option<UnserializableValue>,
   pub description: Option<String>,
-  pub object_id: Option<RemoteObjectId>,
+  pub object_id: Option<OwnedRemoteObjectId>,
 }
 
 // Any value that is present is considered Some value, including null.
@@ -248,13 +250,34 @@ impl ExceptionDetails {
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#type-CallArgument>
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CallArgumentRef<'a> {
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub value: Option<&'a Value>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub unserializable_value: Option<&'a UnserializableValue>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub object_id: Option<&'a RemoteObjectId>,
+}
+
+impl<'a> From<&'a RemoteObject> for CallArgumentRef<'a> {
+  fn from(obj: &'a RemoteObject) -> Self {
+    Self {
+      value: obj.value.as_ref(),
+      unserializable_value: obj.unserializable_value.as_ref(),
+      object_id: obj.object_id.as_deref(),
+    }
+  }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CallArgument {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub value: Option<Value>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub unserializable_value: Option<UnserializableValue>,
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub object_id: Option<RemoteObjectId>,
+  pub object_id: Option<OwnedRemoteObjectId>,
 }
 
 impl From<&RemoteObject> for CallArgument {
@@ -275,13 +298,15 @@ pub struct PropertyDescriptor {
 }
 
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#type-RemoteObjectId>
-pub type RemoteObjectId = String;
+pub type RemoteObjectId = str;
+pub type OwnedRemoteObjectId = <RemoteObjectId as ToOwned>::Owned;
 
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#type-ExecutionContextId>
 pub type ExecutionContextId = u64;
 
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#type-ScriptId>
-pub type ScriptId = String;
+pub type ScriptId = str;
+pub type OwnedScriptId = <ScriptId as ToOwned>::Owned;
 
 /// <https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#type-TimeDelta>
 pub type TimeDelta = u64;
@@ -338,7 +363,7 @@ pub struct FunctionCoverage {
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ScriptCoverage {
-  pub script_id: String,
+  pub script_id: OwnedScriptId,
   pub url: String,
   pub functions: Vec<FunctionCoverage>,
 }

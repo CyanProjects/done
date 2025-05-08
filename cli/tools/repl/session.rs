@@ -1,6 +1,5 @@
 // Copyright 2018-2025 the Deno authors. MIT license.
 
-use std::cell::RefCell;
 use std::sync::Arc;
 
 use deno_ast::diagnostics::Diagnostic;
@@ -84,12 +83,7 @@ fn comment_source_to_position_range(
   }
 }
 
-thread_local! {
-  /// We store functions used in the repl on this object because
-  /// the user might modify the `Deno` global or delete it outright.
-  pub static REPL_INTERNAL_OBJECT_ID: RefCell<Option<RemoteObjectId>> = const { RefCell::new(None) };
-}
-fn get_prelude() -> String {
+const fn get_prelude() -> &'static str {
   r#"(() => {
   const repl_internal = {
       lastEvalResult: undefined,
@@ -136,7 +130,7 @@ fn get_prelude() -> String {
   globalThis.clear = console.clear.bind(console);
 
   return repl_internal
-})()"#.to_string()
+})()"#
 }
 
 pub enum EvaluationOutput {
@@ -156,12 +150,9 @@ impl std::fmt::Display for EvaluationOutput {
 pub fn result_to_evaluation_output(
   r: Result<EvaluationOutput, AnyError>,
 ) -> EvaluationOutput {
-  match r {
-    Ok(value) => value,
-    Err(err) => {
-      EvaluationOutput::Error(format!("{} {:#}", colors::red("error:"), err))
-    }
-  }
+  r.unwrap_or_else(|err| {
+    EvaluationOutput::Error(format!("{} {:#}", colors::red("error:"), err))
+  })
 }
 
 #[derive(Debug)]
@@ -177,6 +168,7 @@ struct ReplJsxState {
 }
 
 pub struct ReplSession {
+  internal_object_id: Option<Arc<RemoteObjectId>>,
   npm_installer: Option<Arc<NpmInstaller>>,
   resolver: Arc<CliResolver>,
   pub worker: MainWorker,
@@ -264,6 +256,7 @@ impl ReplSession {
       .transpile
       .use_ts_decorators;
     let mut repl_session = ReplSession {
+      internal_object_id: None,
       npm_installer,
       resolver,
       worker,
@@ -293,8 +286,8 @@ impl ReplSession {
     };
 
     // inject prelude
-    let evaluated = repl_session.evaluate_expression(&get_prelude()).await?;
-    REPL_INTERNAL_OBJECT_ID.replace(evaluated.result.object_id);
+    let evaluated = repl_session.evaluate_expression(get_prelude()).await?;
+    repl_session.internal_object_id = evaluated.result.object_id.map(Arc::from);
 
     Ok(repl_session)
   }
@@ -308,8 +301,8 @@ impl ReplSession {
 
   pub async fn closing(&mut self) -> Result<bool, AnyError> {
     let result = self
-      .call_function_on_args_internal(
-        r#"function () { return this.closed; }"#.to_string(),
+      .call_function_on_repl_internal_obj(
+        r#"function () { return this.closed; }"#,
         &[],
       )
       .await?
@@ -501,10 +494,9 @@ impl ReplSession {
         "Runtime.callFunctionOn",
         Some(cdp::CallFunctionOnArgs {
           function_declaration:
-            r#"function (object) { this.lastThrownError = object; }"#
-              .to_string(),
-          object_id: REPL_INTERNAL_OBJECT_ID.with_borrow(Clone::clone),
-          arguments: Some(vec![error.into()]),
+            r#"function (object) { this.lastThrownError = object; }"#,
+          object_id: self.internal_object_id.clone().as_deref(),
+          arguments: Some(&[error.into()]),
           silent: None,
           return_by_value: None,
           generate_preview: None,
@@ -528,9 +520,9 @@ impl ReplSession {
       .post_message_with_event_loop(
         "Runtime.callFunctionOn",
         Some(cdp::CallFunctionOnArgs {
-          function_declaration: r#"function (object) { this.lastEvalResult = object; }"#.to_string(),
-          object_id: REPL_INTERNAL_OBJECT_ID.with_borrow(Clone::clone),
-          arguments: Some(vec![evaluate_result.into()]),
+          function_declaration: r#"function (object) { this.lastEvalResult = object; }"#,
+          object_id: self.internal_object_id.clone().as_deref(),
+          arguments: Some(&[evaluate_result.into()]),
           silent: None,
           return_by_value: None,
           generate_preview: None,
@@ -548,10 +540,10 @@ impl ReplSession {
 
   pub async fn call_function_on_args(
     &mut self,
-    function_declaration: String,
+    function_declaration: &str,
     args: &[cdp::RemoteObject],
   ) -> Result<cdp::CallFunctionOnResponse, AnyError> {
-    let arguments: Option<Vec<cdp::CallArgument>> = if args.is_empty() {
+    let arguments: Option<Vec<cdp::CallArgumentRef>> = if args.is_empty() {
       None
     } else {
       Some(args.iter().map(|a| a.into()).collect())
@@ -563,7 +555,7 @@ impl ReplSession {
         Some(cdp::CallFunctionOnArgs {
           function_declaration,
           object_id: None,
-          arguments,
+          arguments: arguments.as_deref(),
           silent: None,
           return_by_value: None,
           generate_preview: None,
@@ -581,12 +573,12 @@ impl ReplSession {
     Ok(response)
   }
 
-  pub async fn call_function_on_args_internal(
+  pub async fn call_function_on_repl_internal_obj(
     &mut self,
-    function_declaration: String,
+    function_declaration: &str,
     args: &[cdp::RemoteObject],
   ) -> Result<cdp::CallFunctionOnResponse, AnyError> {
-    let arguments: Option<Vec<cdp::CallArgument>> = if args.is_empty() {
+    let arguments: Option<Vec<cdp::CallArgumentRef>> = if args.is_empty() {
       None
     } else {
       Some(args.iter().map(|a| a.into()).collect())
@@ -597,8 +589,8 @@ impl ReplSession {
         "Runtime.callFunctionOn",
         Some(cdp::CallFunctionOnArgs {
           function_declaration,
-          object_id: REPL_INTERNAL_OBJECT_ID.with_borrow(Clone::clone),
-          arguments,
+          object_id: self.internal_object_id.clone().as_deref(),
+          arguments: arguments.as_deref(),
           silent: None,
           return_by_value: None,
           generate_preview: None,
@@ -624,15 +616,14 @@ impl ReplSession {
     // consistent with the previous implementation we just get the preview result from
     // Deno.inspectArgs.
     let response = self
-      .call_function_on_args_internal(
+      .call_function_on_repl_internal_obj(
         r#"function (object) {
           try {
             return this.inspectArgs(["%o", object], { colors: !this.noColor });
           } catch (err) {
             return this.inspectArgs(["%o", err]);
           }
-        }"#
-          .to_string(),
+        }"#,
         &[evaluate_result.clone()],
       )
       .await?;
@@ -793,7 +784,7 @@ impl ReplSession {
       .post_message_with_event_loop(
         "Runtime.evaluate",
         Some(cdp::EvaluateArgs {
-          expression: expression.to_string(),
+          expression,
           object_group: None,
           include_command_line_api: None,
           silent: None,

@@ -27,6 +27,7 @@ use tokio_util::sync::CancellationToken;
 use crate::args::Flags;
 use crate::args::JupyterFlags;
 use crate::cdp;
+use crate::cdp::OwnedRemoteObjectId;
 use crate::lsp::ReplCompletionItem;
 use crate::ops;
 use crate::tools::repl;
@@ -271,7 +272,7 @@ impl JupyterReplProxy {
 
   pub async fn get_properties(
     &mut self,
-    object_id: String,
+    object_id: OwnedRemoteObjectId,
   ) -> Option<cdp::GetPropertiesResponse> {
     let _ = self
       .tx
@@ -401,11 +402,11 @@ impl JupyterReplSession {
       ),
       JupyterReplRequest::JsGetProperties { object_id } => {
         JupyterReplResponse::JsGetProperties(
-          self.get_properties(object_id).await,
+          self.get_properties(&object_id).await,
         )
       }
       JupyterReplRequest::JsEvaluate { expr } => {
-        JupyterReplResponse::JsEvaluate(self.evaluate(expr).await)
+        JupyterReplResponse::JsEvaluate(self.evaluate(&*expr).await)
       }
       JupyterReplRequest::JsGlobalLexicalScopeNames => {
         JupyterReplResponse::JsGlobalLexicalScopeNames(
@@ -422,7 +423,7 @@ impl JupyterReplSession {
         args,
       } => JupyterReplResponse::JsCallFunctionOnArgs(
         self
-          .call_function_on_args(function_declaration, &args)
+          .call_function_on_args(&function_declaration, &args)
           .await,
       ),
       JupyterReplRequest::JsCallFunctionOn { arg0, arg1 } => {
@@ -450,7 +451,7 @@ impl JupyterReplSession {
 
   pub async fn get_properties(
     &mut self,
-    object_id: String,
+    object_id: &str,
   ) -> Option<cdp::GetPropertiesResponse> {
     let get_properties_response = self
       .repl_session
@@ -471,7 +472,7 @@ impl JupyterReplSession {
 
   pub async fn evaluate(
     &mut self,
-    expr: String,
+    expr: &str,
   ) -> Option<cdp::EvaluateResponse> {
     let evaluate_response: serde_json::Value = self
       .repl_session
@@ -528,7 +529,7 @@ impl JupyterReplSession {
 
   pub async fn call_function_on_args(
     &mut self,
-    function_declaration: String,
+    function_declaration: &str,
     args: &[cdp::RemoteObject],
   ) -> Result<cdp::CallFunctionOnResponse, AnyError> {
     self

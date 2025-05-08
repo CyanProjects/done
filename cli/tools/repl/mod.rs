@@ -38,6 +38,11 @@ pub use session::TsEvaluateResponse;
 
 use super::test::create_single_test_event_channel;
 
+
+// globalThis may be deleted by user
+// so we are using a way that isn't affected  
+pub const GLOBALTHIS_EXPRESSION: &str = "(()=>this)()"; 
+
 struct Repl {
   session: ReplSession,
   editor: ReplEditor,

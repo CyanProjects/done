@@ -36,6 +36,7 @@ use uuid::Uuid;
 
 use super::JupyterReplProxy;
 use crate::cdp;
+use crate::tools::repl::GLOBALTHIS_EXPRESSION;
 
 pub struct JupyterServer {
   execution_count: ExecutionCount,
@@ -334,7 +335,7 @@ impl JupyterServer {
             // combine results of declarations and globalThis properties
             let mut candidates = get_expression_property_names(
               &mut self.repl_session_proxy,
-              "globalThis",
+              GLOBALTHIS_EXPRESSION,
             )
             .await
             .into_iter()
@@ -803,8 +804,9 @@ async fn get_object_expr_properties(
     evaluate_expression(repl_session_proxy, object_expr).await?;
   let object_id = evaluate_result.result.object_id?;
 
-  let get_properties_response =
-    repl_session_proxy.get_properties(object_id.clone()).await?;
+  let get_properties_response = repl_session_proxy
+    .get_properties(object_id.to_string())
+    .await?;
   Some(
     get_properties_response
       .result
