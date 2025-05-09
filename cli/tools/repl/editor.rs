@@ -38,9 +38,9 @@ use rustyline_derive::Helper;
 use rustyline_derive::Hinter;
 
 use super::channel::RustylineSyncMessageSender;
-use super::session::REPL_INTERNALS_NAME;
 use crate::cdp;
 use crate::colors;
+use crate::tools::repl::GLOBALTHIS_EXPRESSION;
 
 // Provides helpers to the editor like validation for multi-line edits, completion candidates for
 // tab completion.
@@ -99,7 +99,7 @@ impl EditorHelper {
     object_expr: &str,
   ) -> Option<Vec<String>> {
     let evaluate_result = self.evaluate_expression(object_expr)?;
-    let object_id = evaluate_result.result.object_id?;
+    let object_id = &evaluate_result.result.object_id?;
 
     let get_properties_response = self
       .sync_sender
@@ -125,13 +125,16 @@ impl EditorHelper {
     )
   }
 
-  fn evaluate_expression(&self, expr: &str) -> Option<cdp::EvaluateResponse> {
+  fn evaluate_expression(
+    &self,
+    expression: &str,
+  ) -> Option<cdp::EvaluateResponse> {
     let evaluate_response = self
       .sync_sender
       .post_message(
         "Runtime.evaluate",
         Some(cdp::EvaluateArgs {
-          expression: expr.to_string(),
+          expression,
           object_group: None,
           include_command_line_api: None,
           silent: None,
@@ -209,21 +212,17 @@ impl Completer for EditorHelper {
       let candidates = self
         .get_expression_property_names(sub_expr)
         .into_iter()
-        .filter(|n| {
-          !n.starts_with("Symbol(")
-            && n.starts_with(prop_name)
-            && n != &*REPL_INTERNALS_NAME
-        })
+        .filter(|n| !n.starts_with("Symbol(") && n.starts_with(prop_name))
         .collect();
 
       Ok((pos - prop_name.len(), candidates))
     } else {
       // combine results of declarations and globalThis properties
       let mut candidates = self
-        .get_expression_property_names("globalThis")
+        .get_expression_property_names(GLOBALTHIS_EXPRESSION)
         .into_iter()
         .chain(self.get_global_lexical_scope_names())
-        .filter(|n| n.starts_with(expr) && n != &*REPL_INTERNALS_NAME)
+        .filter(|n| n.starts_with(expr))
         .collect::<Vec<_>>();
 
       // sort and remove duplicates

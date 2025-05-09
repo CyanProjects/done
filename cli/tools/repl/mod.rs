@@ -35,9 +35,13 @@ use editor::ReplEditor;
 pub use session::EvaluationOutput;
 pub use session::ReplSession;
 pub use session::TsEvaluateResponse;
-pub use session::REPL_INTERNALS_NAME;
 
 use super::test::create_single_test_event_channel;
+
+
+// globalThis may be deleted by user
+// so we are using a way that isn't affected  
+pub const GLOBALTHIS_EXPRESSION: &str = "(()=>this)()"; 
 
 struct Repl {
   session: ReplSession,
